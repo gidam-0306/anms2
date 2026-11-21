@@ -289,3 +289,17 @@
   .nhero__name.is-shining { animation: none; text-shadow: 0 0 14px rgba(255, 226, 150, .8); transition: text-shadow .6s; }
   .nhero__name.is-shining::after, .nhero__name.is-shining::before { animation: none; }
 }
+
+/* 왼쪽 위: 웹사이트 v1 공개일 */
+.nav__date { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; letter-spacing: .03em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nav__ver {
+  font-size: 11px; font-weight: 700; letter-spacing: .04em; padding: 3px 7px; border-radius: 6px;
+  border: 1px solid currentColor; opacity: .85;
+}
+.nav__launch { font-weight: 500; opacity: .7; margin-right: -4px; }
+/* 예전 이름용 규칙(span 흐리게·휴대폰에서 숨김)을 덮어씀: 날짜 글자는 메뉴 글자와 같은 색 */
+.nav__brand.nav__date span { color: inherit; margin-left: 0; font-size: inherit; display: inline; }
+.nav__brand.nav__date .nav__ver { font-size: 11px; display: inline-block; }
+@media (max-width: 560px) { .nav__brand.nav__date .nav__launch { display: none; } .nav__date { font-size: 13px; gap: 6px; } }
+/* 좁은 휴대폰: 날짜와 메뉴 사이 여백 확보 */
+@media (max-width: 420px) { .nav__date { font-size: 12.5px; gap: 5px; letter-spacing: .01em; margin-right: 12px; } .nav__brand.nav__date .nav__ver { font-size: 10px; padding: 2px 5px; } .nav__links { gap: 11px; } }
