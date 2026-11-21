@@ -61,21 +61,11 @@
       <div class="nhero__eyebrow">디지털 교육 전문가 · 20 Years</div>
       <h1 class="nhero__title">세대를 잇는<br>디지털 교육.</h1>
       <p class="nhero__lead">20년의 경력, AI와 디지털로 모든 세대를 잇는 <br>컴퓨터 교육 전문가 <strong class="nhero__name">안명숙</strong>입니다.</p>
-      <div class="nhero__controls" data-controls>
-        <div class="nstep" data-step="moon" data-min="20" data-max="300" data-by="10" data-unit="초">
-          <button type="button" class="nstep__btn" data-dir="-1" aria-label="해와 달 이동 주기 줄이기 (더 빠르게)">−</button>
-          <div class="nstep__mid"><span class="nstep__name">해/달</span><output class="nstep__val" aria-live="polite">50초</output></div>
-          <button type="button" class="nstep__btn" data-dir="1" aria-label="해와 달 이동 주기 늘리기 (더 느리게)">+</button>
-        </div>
-        <div class="nstep" data-step="twinkle" data-min="0" data-max="100" data-by="10" data-unit="%">
-          <button type="button" class="nstep__btn" data-dir="-1" aria-label="별 반짝임 줄이기">−</button>
-          <div class="nstep__mid"><span class="nstep__name">별</span><output class="nstep__val" aria-live="polite">60%</output></div>
-          <button type="button" class="nstep__btn" data-dir="1" aria-label="별 반짝임 늘리기">+</button>
-        </div>
-        <div class="nstep" data-step="water" data-min="0" data-max="200" data-by="20" data-unit="%">
-          <button type="button" class="nstep__btn" data-dir="-1" aria-label="물살 흐름 줄이기">−</button>
-          <div class="nstep__mid"><span class="nstep__name">물살</span><output class="nstep__val" aria-live="polite">195%</output></div>
-          <button type="button" class="nstep__btn" data-dir="1" aria-label="물살 흐름 늘리기">+</button>
+      <div class="nhero__controls">
+        <div class="nseg" data-daynight data-cur="night" role="group" aria-label="낮과 밤 바꾸기">
+          <span class="nseg__knob" aria-hidden="true"></span>
+          <button type="button" class="nseg__opt" data-go="day" aria-pressed="false"><span class="nseg__ico nseg__ico--sun" aria-hidden="true"></span>Day</button>
+          <button type="button" class="nseg__opt" data-go="night" aria-pressed="true"><span class="nseg__ico nseg__ico--moon" aria-hidden="true"></span>Night</button>
         </div>
       </div>
     </div>

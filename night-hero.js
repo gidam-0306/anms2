@@ -35,11 +35,11 @@
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const stackMQ = window.matchMedia('(max-width: 820px), (max-aspect-ratio: 21/20)'); // must match night-hero.css
 
-  let TO_NAME = reduceMotion ? 120 : 50; // 달이 떠올라 '안명숙'에 닿기까지 걸리는 시간(초) — 이후도 같은 빠르기로 계속 움직임
+  const TO_NAME = reduceMotion ? 120 : 20; // 해·달이 떠올라 '안명숙'에 닿기까지 걸리는 시간(초) — 고정값
   const REST = 8;                          // 달이 진 뒤 다시 떠오르기까지 쉬는 시간(초)
   const FIRST_TOUCH = 15;                  // 페이지를 연 뒤 첫 만남까지(초): 달이 이미 하늘 높이 떠 있는 상태로 시작
-  let TWINKLE = reduceMotion ? 0.3 : 0.6;
-  let FLOW = 1.95;            // 물살 흐름 빠르기 배율
+  const TWINKLE = reduceMotion ? 0.3 : 0.6; // 별 반짝임 세기 — 고정값
+  const FLOW = 1.95;          // 물살 흐름 빠르기 배율 — 고정값
   let wt = 0;              // 물살 시간 (FLOW에 따라 흐름)
   // 그림 속 좌표 (원본 1000×870 기준)
   const PAVILION_X = 330;                       // 누각 가운데
@@ -62,6 +62,9 @@
   let LINES, INK, RAIL_LINES, RAIL_INK, RAIL_GAP, railBox, lastRailDay = -1;
   let touched = false;    // 이번 바퀴에서 달이 이름에 닿았는지
   let sunTouched = true;  // 이번 낮에 해가 이름에 닿았는지 (처음엔 해가 없으므로 true)
+  // Day / Night 버튼으로 바꿀 때: 떠 있던 해·달은 0.8초 동안 사라지고, 그다음 새 해·달이 떠오름
+  const VANISH = 0.8;
+  let fadeMoon = 1, fadeSun = 1, killMoon = false, killSun = false, duskFrom = 0, duskT = 1e9;
 
   /* ---------- sprites ---------- */
   const dotSprite = (rgb) => {
@@ -340,7 +343,7 @@
     ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
     paintSky(d);
     const sun = sunT < moonPath().total ? sunPos() : null; // 해는 지는 동안 밤이 되어도 끝까지 보임
-    if (sun) drawSun(sun);
+    if (sun) { sun.fade *= fadeSun; drawSun(sun); }
     if (d < 1) { ctx.globalAlpha = 1 - d; ctx.drawImage(LINES, 0, 0); }
     if (d > 0) { ctx.globalAlpha = d; ctx.drawImage(INK, 0, 0); }
     ctx.globalAlpha = 1;
@@ -362,6 +365,7 @@
       }
     }
     const moon = tc < moonPath().total ? moonPos() : { x: 0, y: 0, fade: 0 }; // 달도 지는 동안 낮이 되어도 끝까지 보임
+    moon.fade *= fadeMoon;
     drawWater(wt, moon, d, sun);
     if (d > 0) { // 낮에도 물속 다리 기둥이 은은하게 비치도록
       ctx.save(); ctx.beginPath(); ctx.rect(0, L.water, W, H - L.water); ctx.clip();
@@ -475,6 +479,9 @@
     wt += dt * FLOW;
     const path = moonPath();
     sunT += dt;
+    duskT += dt;
+    if (killMoon) { fadeMoon -= dt / VANISH; if (fadeMoon <= 0) { killMoon = false; fadeMoon = 1; if (cyc === 'day') tc = 1e9; } }
+    if (killSun) { fadeSun -= dt / VANISH; if (fadeSun <= 0) { killSun = false; fadeSun = 1; if (cyc === 'night') sunT = 1e9; } }
     // 달이 다리 너머로 완전히 진 순간 해가 떠오르고, 해가 완전히 지면 달이 떠오름 (해와 달이 함께 보이지 않음)
     const handoff = path.total;
     if (cyc === 'night') {
@@ -486,10 +493,12 @@
     }
     // 하늘 밝기: 해가 떠오르며 밝아지고, 해가 질 때 어두워짐
     const sunLive = cyc === 'day' || sunT < path.total;
-    const dayTarget = sunLive ? Math.min(ease(sunT / SUNRISE), ease((path.total - sunT) / SUNSET)) : 0;
+    let dayTarget = sunLive ? Math.min(ease(sunT / SUNRISE), ease((path.total - sunT) / SUNSET)) : 0;
+    if (cyc === 'night' && duskT < SUNSET) dayTarget = duskFrom * (1 - ease(duskT / SUNSET)); // Night 버튼: 5초에 걸쳐 어두워짐
     DAY = Math.max(0, Math.min(1, dayTarget));
     const isDay = DAY > 0.5;
     if (isDay !== hero.classList.contains('is-day')) { hero.classList.toggle('is-day', isDay); onScroll(); }
+    updateToggle();
     draw(ts / 1000);
     updateWalker(dt);
     requestAnimationFrame(frame);
@@ -546,31 +555,30 @@
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 
-  /* ---------- 장면 조절 버튼: − / + (누르고 있으면 계속 바뀜) ---------- */
-  const settings = {
-    moon: { get: () => TO_NAME, set: (v) => { if (tc != null) tc *= v / TO_NAME; TO_NAME = v; } }, // 달은 지금 위치에서 빠르기만 바뀜
-    twinkle: { get: () => Math.round(TWINKLE * 100), set: (v) => { TWINKLE = v / 100; } },
-    water: { get: () => Math.round(FLOW * 100), set: (v) => { FLOW = v / 100; } },
+  /* ---------- Day | Night 토글 (반으로 나뉜 버튼) ---------- */
+  // 지금 장면 쪽이 밝게 표시되고, 다른 쪽을 누르면 그 장면으로 바뀜. 자동으로 밤낮이 바뀌어도 표시가 따라감
+  const toggle = hero.querySelector('[data-daynight]');
+  let shownMode = '';
+  function updateToggle() {
+    if (!toggle) return;
+    const cur = cyc; // 'day' | 'night'
+    if (cur === shownMode) return;
+    shownMode = cur;
+    toggle.dataset.cur = cur;
+    toggle.querySelectorAll('[data-go]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.go === cur)));
+  }
+  const goDay = () => {
+    if (!ready || cyc === 'day') return;
+    killMoon = true; fadeMoon = 1;
+    cyc = 'day'; sunT = -VANISH; sunTouched = false; duskT = 1e9; // 달이 사라진 뒤 해가 떠오름
+    updateToggle();
   };
-  hero.querySelectorAll('[data-step]').forEach((box) => {
-    const cfg = settings[box.dataset.step];
-    const min = +box.dataset.min, max = +box.dataset.max, by = +box.dataset.by, unit = box.dataset.unit;
-    const out = box.querySelector('output'), btns = box.querySelectorAll('.nstep__btn');
-    const show = () => {
-      const v = cfg.get(); out.textContent = `${v}${unit}`;
-      btns.forEach((b) => { b.disabled = +b.dataset.dir < 0 ? v <= min : v >= max; });
-    };
-    const bump = (dir) => { const v = Math.min(max, Math.max(min, cfg.get() + dir * by)); if (v !== cfg.get()) cfg.set(v); show(); };
-    btns.forEach((b) => {
-      let hold, rep;
-      const stopHold = () => { clearTimeout(hold); clearInterval(rep); };
-      b.addEventListener('pointerdown', (e) => {
-        e.preventDefault(); const dir = +b.dataset.dir; bump(dir);
-        hold = setTimeout(() => { rep = setInterval(() => bump(dir), 90); }, 400);
-      });
-      ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => b.addEventListener(ev, stopHold));
-      b.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bump(+b.dataset.dir); } });
-    });
-    show();
-  });
+  const goNight = () => {
+    if (!ready || cyc === 'night') return;
+    killSun = true; fadeSun = 1;
+    duskFrom = DAY; duskT = 0;
+    cyc = 'night'; tc = -VANISH; touched = false; // 해가 사라진 뒤 달이 떠오름
+    updateToggle();
+  };
+  if (toggle) toggle.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => (b.dataset.go === 'day' ? goDay() : goNight())));
 })();
