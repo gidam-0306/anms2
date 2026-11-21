@@ -276,13 +276,16 @@ img { display: block; max-width: 100%; }
 .modal__done-btn { font: inherit; font-size: 16px; font-weight: 600; color: var(--ink); background: var(--gray-bg); border: 0; border-radius: 980px; padding: 12px 28px; cursor: pointer; }
 
 .form { display: flex; flex-direction: column; gap: 16px; }
-.form__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
 .field { display: flex; flex-direction: column; gap: 7px; font-size: 13px; font-weight: 600; color: var(--muted); }
 .field input, .field textarea {
   font: inherit; font-size: 16px; font-weight: 500; color: var(--ink);
   border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; outline-color: var(--accent);
 }
 .field textarea { resize: vertical; }
+/* 모든 입력칸을 같은 폭으로: 입력칸의 기본 최소 폭 때문에 칸이 밖으로 삐져나오지 않게 */
+.field { min-width: 0; }
+.field input, .field textarea { width: 100%; min-width: 0; box-sizing: border-box; }
 .field input.is-invalid, .field textarea.is-invalid { border-color: #d70015; }
 .topics { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
 .topics legend { padding: 0; margin-bottom: 9px; font-size: 13px; font-weight: 600; color: var(--muted); }

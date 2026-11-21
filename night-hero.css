@@ -252,7 +252,11 @@
 .js .nhero.is-ready .nhero__title { filter: drop-shadow(0 0 10px rgba(0, 0, 0, .9)) drop-shadow(0 6px 36px rgba(255, 226, 160, .16)); }
 .js .nhero.is-ready.is-day .nhero__title { filter: none; }
 .nhero__shade { transition: opacity 1.6s ease; }
-.nhero.is-day { --halo: 0 0 2px rgba(255, 255, 255, .85), 0 0 14px rgba(255, 255, 255, .7); }
+/* 낮: 글자 주변의 번짐·그림자를 모두 없애 깔끔하게 */
+.nhero.is-day { --halo: none; }
+.nhero.is-day .nhero__eyebrow, .nhero.is-day .nhero__lead, .nhero.is-day .nhero__lead strong { text-shadow: none; }
+.nhero.is-day .nhero__eyebrow { color: #8a5a0c; }
+.js .nhero.is-ready.is-day .nhero__content > * { filter: none; }
 .nhero.is-day .nhero__shade { opacity: 0; }
 .nhero.is-day .nhero__eyebrow { color: #9a6410; }
 .nhero.is-day .nhero__title { background-image: none; color: #13294b; -webkit-text-fill-color: #13294b; }
