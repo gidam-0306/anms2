@@ -10,6 +10,10 @@
   const cv = hero.querySelector('canvas');
   const ctx = cv.getContext('2d');
   const nav = document.querySelector('[data-nav]');
+  // 첫 화면 높이를 픽셀로 고정 (가로 폭이 바뀔 때만 다시 잼)
+  let lockedW = 0;
+  const lockHeight = () => { lockedW = window.innerWidth; hero.style.height = `${Math.max(560, window.innerHeight)}px`; };
+  lockHeight();
   const dim = hero.querySelector('.nhero__dim');
   const sceneEl = hero.querySelector('[data-scene]') || cv;
   const walker = hero.querySelector('[data-walker]');
@@ -418,7 +422,8 @@
       if (wk.p >= 1) { wk.state = 'stand'; wk.standT = 0; }
     } else if (wk.state === 'stand') {
       const before = wk.standT; wk.standT += dt;
-      if (before < 2.8 && wk.standT >= 2.8) wave(); // 글자가 다 나타난 뒤 팔을 들어 손을 흔듦
+      // 글자가 다 나타난 뒤부터 같은 자리에서 손을 계속 흔듦 (한 번 흔들고 잠깐 쉬고 반복)
+      if (wk.standT >= 2.8 && pose.waveT < 0 && wk.standT - (pose.waveEnd || 0) > 0.25) wave();
     }
     const x = wk.state === 'walk' ? g.startX + (g.stopX - g.startX) * wk.p : g.stopX;
     walker.style.transform = `translate3d(${x.toFixed(1)}px, ${(g.feet - g.h * 0.982).toFixed(1)}px, 0)`;
@@ -439,9 +444,9 @@
       pose.waveT += dt;
       const t = pose.waveT, env = ease((t - 0.25) / 0.2) * ease((WAVE_DUR - t) / 0.3);
       handA = env * 16 * Math.sin((t - 0.25) * 2 * Math.PI * WAVE_HZ);
-      if (t >= WAVE_DUR) pose.waveT = -1;
+      if (t >= WAVE_DUR) { pose.waveT = -1; pose.waveEnd = wk.standT; }
     }
-    pose.raise = approach(pose.raise, pose.waveT >= 0 && pose.waveT < WAVE_DUR - 0.2 ? 1 : 0, 9, dt);
+    pose.raise = approach(pose.raise, (wk.state === 'stand' && wk.standT >= 2.8) || (pose.waveT >= 0 && pose.waveT < WAVE_DUR - 0.2 ? 1 : 0) ? 1 : 0, 9, dt); // 서 있는 동안은 팔을 든 채로 계속 손 흔들기
     const rz = pose.raise;
     // 팔은 반대쪽 다리와 엇갈리게: 화면 왼쪽 다리가 나갈 때 화면 오른쪽 팔이 앞으로, 그 반대도 마찬가지
     // 정면에서 볼 때 앞으로 가는 팔은 손이 몸 쪽으로 올라오고, 뒤로 가는 팔은 바깥쪽으로 살짝 빠짐
@@ -533,8 +538,10 @@
   document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
   let rt;
   window.addEventListener('resize', () => {
+    // 휴대폰에서 스크롤할 때 주소창이 숨거나 나타나며 화면 높이만 바뀌는 경우는 무시 → 그림·캐릭터 위치가 튀지 않음
+    if (window.innerWidth === lockedW) return;
     clearTimeout(rt);
-    rt = setTimeout(() => { if (ready) { build(); measureName(); draw(performance.now() / 1000); } }, 150);
+    rt = setTimeout(() => { lockHeight(); if (ready) { build(); measureName(); draw(performance.now() / 1000); } }, 150);
   }, { passive: true });
 
   /* ---------- scroll: scene drifts slower than the page, nav stays dark over the night ---------- */
